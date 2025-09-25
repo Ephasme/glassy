@@ -11,7 +11,7 @@ A React component that recreates Apple's stunning Liquid Glass effect, bringing 
 - 🌈 **Chromatic aberration** - Subtle color separation for authentic glass look
 - ⚡ **Performance optimized** - Uses SVG filters with backdrop-filter for smooth rendering
 - 🎛️ **Highly customizable** - Fine-tune depth, blur, scale, and aberration effects
-- 📱 **Responsive** - Automatically adapts to element dimensions
+- 📱 **Responsive** - Automatically adapts to element dimensions and fit in the DOM flow nicely
 - 🎯 **TypeScript ready** - Full type definitions included
 
 ## 🚀 Installation

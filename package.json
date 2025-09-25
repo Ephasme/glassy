@@ -24,7 +24,9 @@
   ],
   "scripts": {
     "build": "tsdown src/index.tsx --format cjs,esm --dts",
-    "dev": "tsdown src/index.tsx --format cjs,esm --dts --watch"
+    "dev": "tsdown src/index.tsx --format cjs,esm --dts --watch",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
   },
   "keywords": [
     "react",
@@ -44,9 +46,14 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^9.36.0",
     "@types/react": "^18.3.3",
+    "eslint": "^9.36.0",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.4.0",
     "tsdown": "^0.15.4",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^8.44.1"
   },
   "sideEffects": false,
   "peerDependencies": {

@@ -1,0 +1,197 @@
+# .github/workflows/release.yml
+name: Build and Publish @ephasme/glassy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Security: minimal required permissions
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+
+jobs:
+  # Automated release management
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      major: ${{ steps.release.outputs.major }}
+      minor: ${{ steps.release.outputs.minor }}
+      patch: ${{ steps.release.outputs.patch }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          release-type: node
+          package-name: "@ephasme/glassy"
+          target-branch: main
+
+  # Build, test, and quality checks
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Cache dependencies and build outputs
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm
+            .next/cache
+            node_modules
+            dist
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.node-version }}-
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript type checking
+        run: pnpm run type-check || pnpm exec tsc --noEmit
+
+      - name: Run linting
+        run: pnpm run lint || pnpm exec eslint src --ext .ts,.tsx
+
+      - name: Build library
+        run: pnpm run build
+
+      - name: Check build output
+        run: |
+          echo "Checking build artifacts..."
+          ls -la dist/
+          echo "Package contents:"
+          pnpm pack --dry-run
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: matrix.node-version == '20'
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            *.tgz
+          retention-days: 7
+
+  # Publish to npm (only on release)
+  publish:
+    needs: [release, build]
+    runs-on: ubuntu-latest
+    if: ${{ needs.release.outputs.release_created }}
+    environment: npm-publish
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          # Fetch all history and tags so we can see the release tag
+          fetch-depth: 0
+          # Use the GitHub token for authenticated git operations
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build for production
+        run: pnpm run build
+
+      - name: Validate package before publishing
+        run: |
+          pnpm pack
+          echo "Package validation completed"
+
+      - name: Publish to npm
+        run: pnpm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release with build artifacts
+        if: ${{ needs.release.outputs.release_created }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create tarball for GitHub release
+          pnpm pack
+
+          # Upload to GitHub release
+          gh release upload ${{ needs.release.outputs.tag_name }} \
+            *.tgz \
+            --clobber
+
+      - name: Update version tags
+        if: ${{ needs.release.outputs.release_created }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Configure git for authenticated operations
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+
+          # Fetch latest tags to ensure we have the release tag
+          git fetch --tags
+
+          echo "Full semantic version tag ${{ needs.release.outputs.tag_name }} was already created by release-please"
+          echo "Current tags:"
+          git tag --list "v*" | tail -5
+
+          # Verify the release tag exists
+          if ! git tag --list | grep -q "^${{ needs.release.outputs.tag_name }}$"; then
+            echo "❌ Error: Release tag ${{ needs.release.outputs.tag_name }} not found!"
+            echo "Available tags:"
+            git tag --list
+            exit 1
+          fi
+
+          echo "✅ Release tag ${{ needs.release.outputs.tag_name }} confirmed"
+
+          # Create/update floating major version tag (v1, v2, etc.)
+          # This allows users to reference @v1 and always get the latest v1.x.x
+          echo "Creating/updating major version tag: v${{ needs.release.outputs.major }}"
+          git tag -f v${{ needs.release.outputs.major }}
+          git push origin v${{ needs.release.outputs.major }} --force
+
+          # Create/update floating minor version tag (v1.2, v2.1, etc.)
+          # This allows users to reference @v1.2 and always get the latest v1.2.x
+          echo "Creating/updating minor version tag: v${{ needs.release.outputs.major }}.${{ needs.release.outputs.minor }}"
+          git tag -f v${{ needs.release.outputs.major }}.${{ needs.release.outputs.minor }}
+          git push origin v${{ needs.release.outputs.major }}.${{ needs.release.outputs.minor }} --force
+
+          echo "✅ All version tags created:"
+          echo "  - Full version: ${{ needs.release.outputs.tag_name }} (created by release-please)"
+          echo "  - Major version: v${{ needs.release.outputs.major }} (floating, points to latest)"
+          echo "  - Minor version: v${{ needs.release.outputs.major }}.${{ needs.release.outputs.minor }} (floating, points to latest)"

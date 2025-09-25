@@ -67,7 +67,18 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          # Clear pnpm cache to avoid corrupted native bindings
+          pnpm store prune
+          # Install with shamefully-hoist to help with native dependencies
+          pnpm install --frozen-lockfile --shamefully-hoist
+
+      - name: Rebuild native dependencies
+        run: |
+          # Rebuild native dependencies to ensure compatibility with the GitHub Actions environment
+          pnpm rebuild
+          # Also rebuild specific packages that might have native bindings
+          pnpm rebuild rolldown || true
 
       - name: TypeScript type checking
         run: pnpm run type-check || pnpm exec tsc --noEmit
@@ -121,7 +132,18 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          # Clear pnpm cache to avoid corrupted native bindings
+          pnpm store prune
+          # Install with shamefully-hoist to help with native dependencies
+          pnpm install --frozen-lockfile --shamefully-hoist
+
+      - name: Rebuild native dependencies
+        run: |
+          # Rebuild native dependencies to ensure compatibility with the GitHub Actions environment
+          pnpm rebuild
+          # Also rebuild specific packages that might have native bindings
+          pnpm rebuild rolldown || true
 
       - name: Build for production
         run: pnpm run build

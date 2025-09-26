@@ -1,0 +1,12 @@
+# pnpm workspace configuration
+packages:
+  - "."
+
+# Support WASM fallback for platforms without native bindings
+supportedArchitectures:
+  os:
+    - current
+    - wasip1-threads
+  cpu:
+    - current
+    - wasm32

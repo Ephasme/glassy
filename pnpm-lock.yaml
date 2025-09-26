@@ -18,6 +18,9 @@ importers:
       '@eslint/js':
         specifier: ^9.36.0
         version: 9.36.0
+      '@rolldown/binding-wasm32-wasi':
+        specifier: 1.0.0-beta.40
+        version: 1.0.0-beta.40
       '@types/react':
         specifier: ^18.3.3
         version: 18.3.24
@@ -1320,17 +1323,14 @@ snapshots:
     dependencies:
       '@emnapi/wasi-threads': 1.1.0
       tslib: 2.8.1
-    optional: true
 
   '@emnapi/runtime@1.5.0':
     dependencies:
       tslib: 2.8.1
-    optional: true
 
   '@emnapi/wasi-threads@1.1.0':
     dependencies:
       tslib: 2.8.1
-    optional: true
 
   '@eslint-community/eslint-utils@4.9.0(eslint@9.36.0(jiti@2.6.0))':
     dependencies:
@@ -1406,7 +1406,6 @@ snapshots:
       '@emnapi/core': 1.5.0
       '@emnapi/runtime': 1.5.0
       '@tybys/wasm-util': 0.10.1
-    optional: true
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -1459,7 +1458,6 @@ snapshots:
   '@rolldown/binding-wasm32-wasi@1.0.0-beta.40':
     dependencies:
       '@napi-rs/wasm-runtime': 1.0.5
-    optional: true
 
   '@rolldown/binding-win32-arm64-msvc@1.0.0-beta.40':
     optional: true
@@ -1475,7 +1473,6 @@ snapshots:
   '@tybys/wasm-util@0.10.1':
     dependencies:
       tslib: 2.8.1
-    optional: true
 
   '@types/estree@1.0.8': {}
 
@@ -2671,8 +2668,7 @@ snapshots:
       - supports-color
       - vue-tsc
 
-  tslib@2.8.1:
-    optional: true
+  tslib@2.8.1: {}
 
   type-check@0.4.0:
     dependencies:

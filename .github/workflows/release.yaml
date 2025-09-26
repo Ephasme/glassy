@@ -28,7 +28,6 @@ jobs:
         id: release
         with:
           release-type: node
-          package-name: "@ephasme/glassy"
           target-branch: main
           token: ${{ secrets.GITHUB_TOKEN }}
 

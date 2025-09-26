@@ -20,7 +20,7 @@
   "files": [
     "dist",
     "README.md",
-    "CHANGELOG.md"
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsdown src/index.tsx --format cjs,esm --dts",

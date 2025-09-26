@@ -58,7 +58,6 @@ jobs:
         with:
           path: |
             ~/.pnpm
-            .next/cache
             node_modules
             dist
           key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -156,40 +155,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Configure git for authenticated operations
+          # Configure git and fetch tags
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-
-          # Fetch latest tags to ensure we have the release tag
           git fetch --tags
 
-          echo "Full semantic version tag ${{ needs.release.outputs.tag_name }} was already created by release-please"
-          echo "Current tags:"
-          git tag --list "v*" | tail -5
-
-          # Verify the release tag exists
-          if ! git tag --list | grep -q "^${{ needs.release.outputs.tag_name }}$"; then
-            echo "❌ Error: Release tag ${{ needs.release.outputs.tag_name }} not found!"
-            echo "Available tags:"
-            git tag --list
-            exit 1
-          fi
-
-          echo "✅ Release tag ${{ needs.release.outputs.tag_name }} confirmed"
-
-          # Create/update floating major version tag (v1, v2, etc.)
-          # This allows users to reference @v1 and always get the latest v1.x.x
-          echo "Creating/updating major version tag: v${{ needs.release.outputs.major }}"
+          # Create floating major and minor version tags
           git tag -f v${{ needs.release.outputs.major }}
-          git push origin v${{ needs.release.outputs.major }} --force
-
-          # Create/update floating minor version tag (v1.2, v2.1, etc.)
-          # This allows users to reference @v1.2 and always get the latest v1.2.x
-          echo "Creating/updating minor version tag: v${{ needs.release.outputs.major }}.${{ needs.release.outputs.minor }}"
           git tag -f v${{ needs.release.outputs.major }}.${{ needs.release.outputs.minor }}
+
+          # Push tags
+          git push origin v${{ needs.release.outputs.major }} --force
           git push origin v${{ needs.release.outputs.major }}.${{ needs.release.outputs.minor }} --force
 
-          echo "✅ All version tags created:"
-          echo "  - Full version: ${{ needs.release.outputs.tag_name }} (created by release-please)"
-          echo "  - Major version: v${{ needs.release.outputs.major }} (floating, points to latest)"
-          echo "  - Minor version: v${{ needs.release.outputs.major }}.${{ needs.release.outputs.minor }} (floating, points to latest)"
+          echo "✅ Created floating tags: v${{ needs.release.outputs.major }} and v${{ needs.release.outputs.major }}.${{ needs.release.outputs.minor }}"

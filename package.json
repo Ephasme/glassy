@@ -1,6 +1,6 @@
 {
   "name": "@ephasme/glassy",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A React component for creating a liquid glass effect.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

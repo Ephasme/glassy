@@ -18,9 +18,7 @@
     }
   },
   "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
+    "dist"
   ],
   "scripts": {
     "build": "tsdown src/index.tsx --format cjs,esm --dts",
